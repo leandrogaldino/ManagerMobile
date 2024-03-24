@@ -2,15 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:manager_mobile_app/src/models/person_compressor_coalescent_model.dart';
 import 'package:manager_mobile_app/src/models/person_compressor_model.dart';
 import 'package:manager_mobile_app/src/models/person_model.dart';
+import 'package:manager_mobile_app/src/repositories/person_compressor_coalescent_repository.dart';
+import 'package:manager_mobile_app/src/repositories/person_compressor_repository.dart';
 import 'package:manager_mobile_app/src/repositories/person_repository.dart';
+import 'package:manager_mobile_app/src/shared/database/localdb.dart';
 import 'package:manager_mobile_app/src/shared/database/sqflite_db.dart';
 import 'package:manager_mobile_app/src/shared/database/sql/database_sql.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   late Database database;
-  late SqfliteDB sqfliteDb;
-  late PersonRepository repository;
+  late LocalDB db;
+  late PersonCompressorCoalescentRepository coalescentRepository;
+  late PersonCompressorRepository compressorRepository;
+  late PersonRepository personRepository;
   late PersonModel? model;
   setUpAll(() async {
     sqfliteFfiInit();
@@ -18,8 +23,10 @@ void main() {
     options.onCreate = DatabaseSQL.createDb;
     options.version = 1;
     database = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath, options: options);
-    sqfliteDb = SqfliteDB(database: database);
-    repository = PersonRepository(db: sqfliteDb);
+    db = SqfliteDB(database: database);
+    coalescentRepository = PersonCompressorCoalescentRepository(db: db);
+    compressorRepository = PersonCompressorRepository(db: db, coalescentRepository: coalescentRepository);
+    personRepository = PersonRepository(db: db, compressorRepository: compressorRepository);
   });
 
   test('Save person', () async {
@@ -50,7 +57,7 @@ void main() {
         ),
       ],
     );
-    model = await repository.save(model!);
+    model = await personRepository.save(model!);
     expect(model!.id, 1);
 
     model = PersonModel(
@@ -80,7 +87,7 @@ void main() {
         ),
       ],
     );
-    model = await repository.save(model!);
+    model = await personRepository.save(model!);
     expect(model!.id, 2);
   });
 }

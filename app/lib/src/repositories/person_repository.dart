@@ -1,30 +1,30 @@
+import 'package:manager_mobile_app/src/models/person_compressor_model.dart';
 import 'package:manager_mobile_app/src/models/person_model.dart';
 import 'package:manager_mobile_app/src/repositories/repository.dart';
-import 'package:manager_mobile_app/src/shared/database/sqflite_db.dart';
-import 'package:manager_mobile_app/src/shared/database/sql/person_compressor_sql.dart';
+import 'package:manager_mobile_app/src/repositories/repository_by_parent.dart';
+import 'package:manager_mobile_app/src/shared/database/localdb.dart';
 import 'package:manager_mobile_app/src/shared/database/sql/person_sql.dart';
 
 class PersonRepository implements Repository<PersonModel> {
-  final SqfliteDB db;
+  final LocalDB db;
+  final RepositoryByParent<PersonCompressorModel> compressorRepository;
 
-  PersonRepository({required this.db});
+  PersonRepository({required this.db, required this.compressorRepository});
 
   @override
   Future<List<PersonModel>> getAll() async {
-    var persons = await db.connection.rawQuery(PersonSQL.selectAll);
-    return persons.map((e) => PersonModel.fromMap(e)).toList();
+    var result = await db.query(PersonSQL.selectAll);
+    return result.dataSet!.map((e) => PersonModel.fromMap(e)).toList();
   }
 
   @override
   Future<PersonModel?> getById(int id) async {
-    List<Map<String, Object?>> result;
-    result = await db.connection.rawQuery(PersonSQL.selectById, [id]);
-    if (result.length == 1) {
-      Map<String, Object?> personMap = result[0];
-      result = await db.connection.rawQuery(PersonCompressorSQL.selectByPersonId, [id]);
-      if (result.isNotEmpty) {
-        personMap['compressors'] = result;
-      }
+    var result = await db.query(PersonSQL.selectById, [id]);
+    if (result.dataSet!.length == 1) {
+      Map<String, Object?> map = result.dataSet![0];
+      var compressorList = await compressorRepository.getByParentId(map['personid'] as int);
+      map['compressors'] = compressorList.map((coalescent) => coalescent.toMap()).toList();
+      return PersonModel.fromMap(map);
     } else {
       return null;
     }
@@ -32,43 +32,17 @@ class PersonRepository implements Repository<PersonModel> {
 
   @override
   Future<PersonModel> delete(PersonModel model) async {
+    //TODO
     throw UnimplementedError();
   }
 
   @override
   Future<PersonModel> save(PersonModel model) async {
-    PersonModel savingModel = model.copyWith();
-    int id;
-    db.connection.transaction(
-      (txn) async {
-        id = await txn.rawInsert(PersonSQL.insert, [
-          model.id,
-          model.document,
-          model.name,
-          model.isTechnician ? 1 : 0,
-          model.isCustomer ? 1 : 0,
-        ]);
-        savingModel = savingModel.copyWith(id: id);
-
-        for (var compressor in savingModel.compressors) {
-          id = await txn.rawInsert('sql');
-          compressor = compressor.copyWith(id: id);
-        }
-      },
-    );
-
-    return savingModel;
+    throw UnimplementedError();
   }
 
   @override
   Future<PersonModel> update(PersonModel model) async {
-    await db.connection.rawInsert(PersonSQL.update, [
-      model.document,
-      model.name,
-      model.isTechnician ? 1 : 0,
-      model.isCustomer ? 1 : 0,
-      model.id,
-    ]);
-    return model;
+    throw UnimplementedError();
   }
 }

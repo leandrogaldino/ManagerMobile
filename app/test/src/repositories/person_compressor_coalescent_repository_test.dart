@@ -1,13 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:manager_mobile_app/src/shared/database/localdb.dart';
+import 'package:manager_mobile_app/src/shared/database/sqflite_db.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:manager_mobile_app/src/models/person_compressor_coalescent_model.dart';
 import 'package:manager_mobile_app/src/repositories/person_compressor_coalescent_repository.dart';
-import 'package:manager_mobile_app/src/shared/database/sqflite_db.dart';
 import 'package:manager_mobile_app/src/shared/database/sql/database_sql.dart';
 
 void main() {
   late Database database;
-  late SqfliteDB sqfliteDb;
+  late LocalDB db;
   late PersonCompressorCoalescentRepository repository;
   late PersonCompressorCoalescentModel? model;
   late List<PersonCompressorCoalescentModel> models;
@@ -18,8 +19,8 @@ void main() {
       options.onCreate = DatabaseSQL.createDb;
       options.version = 1;
       database = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath, options: options);
-      sqfliteDb = SqfliteDB(database: database);
-      repository = PersonCompressorCoalescentRepository(db: sqfliteDb);
+      db = SqfliteDB(database: database);
+      repository = PersonCompressorCoalescentRepository(db: db);
     },
   );
 

@@ -1,36 +1,36 @@
 import 'package:manager_mobile_app/src/models/person_compressor_coalescent_model.dart';
-import 'package:manager_mobile_app/src/repositories/repository.dart';
-import 'package:manager_mobile_app/src/shared/database/sqflite_db.dart';
+import 'package:manager_mobile_app/src/repositories/repository_by_parent.dart';
+import 'package:manager_mobile_app/src/shared/database/localdb.dart';
 import 'package:manager_mobile_app/src/shared/database/sql/person_compressor_coalescent_sql.dart';
 
-class PersonCompressorCoalescentRepository implements Repository<PersonCompressorCoalescentModel> {
-  final SqfliteDB db;
+class PersonCompressorCoalescentRepository implements RepositoryByParent<PersonCompressorCoalescentModel> {
+  final LocalDB db;
 
   PersonCompressorCoalescentRepository({required this.db});
 
   @override
   Future<PersonCompressorCoalescentModel?> delete(PersonCompressorCoalescentModel model) async {
-    int deletedRows = await db.connection.rawDelete(
+    var result = await db.delete(
       PersonCompressorCoalescentSQL.delete,
       [
         model.id,
       ],
     );
-    return deletedRows == 1 ? null : model;
+
+    return result.affectedRows == 1 ? null : model;
   }
 
   @override
   Future<List<PersonCompressorCoalescentModel>> getAll() async {
-    var result = await db.connection.rawQuery(PersonCompressorCoalescentSQL.selectAll);
-    return result.map((e) => PersonCompressorCoalescentModel.fromMap(e)).toList();
+    var result = await db.query(PersonCompressorCoalescentSQL.selectAll);
+    return result.dataSet!.map((e) => PersonCompressorCoalescentModel.fromMap(e)).toList();
   }
 
   @override
   Future<PersonCompressorCoalescentModel?> getById(int id) async {
-    List<Map<String, Object?>> result;
-    result = await db.connection.rawQuery(PersonCompressorCoalescentSQL.selectById, [id]);
-    if (result.length == 1) {
-      Map<String, Object?> map = result[0];
+    var result = await db.query(PersonCompressorCoalescentSQL.selectById, [id]);
+    if (result.dataSet!.length == 1) {
+      Map<String, Object?> map = result.dataSet![0];
       return PersonCompressorCoalescentModel.fromMap(map);
     } else {
       return null;
@@ -40,8 +40,7 @@ class PersonCompressorCoalescentRepository implements Repository<PersonCompresso
   @override
   Future<PersonCompressorCoalescentModel> save(PersonCompressorCoalescentModel model) async {
     PersonCompressorCoalescentModel savingModel;
-    int id;
-    id = await db.connection.rawInsert(
+    var result = await db.insert(
       PersonCompressorCoalescentSQL.insert,
       [
         model.id,
@@ -49,26 +48,27 @@ class PersonCompressorCoalescentRepository implements Repository<PersonCompresso
         model.name,
       ],
     );
-    savingModel = model.copyWith(id: id);
+    savingModel = model.copyWith(id: result.lastInsertedRowId);
     return savingModel;
   }
 
   @override
   Future<PersonCompressorCoalescentModel> update(PersonCompressorCoalescentModel model) async {
-    await db.connection.rawInsert(PersonCompressorCoalescentSQL.update, [
+    await db.update(PersonCompressorCoalescentSQL.update, [
       model.name,
       model.id,
     ]);
     return model;
   }
 
+  @override
   Future<List<PersonCompressorCoalescentModel>> getByParentId(int parentId) async {
-    var result = await db.connection.rawQuery(
+    var result = await db.query(
       PersonCompressorCoalescentSQL.selectByCompressorId,
       [
         parentId,
       ],
     );
-    return result.map((e) => PersonCompressorCoalescentModel.fromMap(e)).toList();
+    return result.dataSet!.map((e) => PersonCompressorCoalescentModel.fromMap(e)).toList();
   }
 }
