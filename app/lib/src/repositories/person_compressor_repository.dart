@@ -36,7 +36,7 @@ class PersonCompressorRepository implements RepositoryByParent<PersonCompressorM
     var result = await db.query(PersonCompressorSQL.selectById, [id]);
     if (result.dataSet!.length == 1) {
       Map<String, Object?> map = result.dataSet![0];
-      var coalescentList = await coalescentRepository.getByParentId(map['compressorid'] as int);
+      var coalescentList = await coalescentRepository.getByParentId(map['personid'] as int);
       map['coalescents'] = coalescentList.map((coalescent) => coalescent.toMap()).toList();
       return PersonCompressorModel.fromMap(map);
     } else {
